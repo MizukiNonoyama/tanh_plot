@@ -1,2 +1,4 @@
 # tanh_plot
-Runnable on JavaSE-17
+Need JavaSE-17 to execute.
+
+There is a executable jar file plot/build/tanh.jar.
