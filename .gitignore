@@ -1,3 +1,4 @@
 /.metadata/
 /plot/*
 !/plot/src
+!/plot/build
