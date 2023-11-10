@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.swing.JPanel;
 
+import plot.utils.MathHelper;
 import plot.utils.Pair;
 import plot.utils.PlotField;
 
@@ -69,11 +70,15 @@ public class JPlot extends JPanel {
 			if(mkLine) {
 				if(index + 1 < size) {
 					Pair<Double,Double> pair1 = datas.get(index + 1);
-					g.drawLine(pf.getX(pair.getKey()), pf.getY(pair.getValue()), pf.getX(pair1.getKey()), pf.getY(pair1.getValue()));
+					if(MathHelper.isIn(pair.getKey(), pair.getValue(), min_x,min_y,max_x,max_y) && MathHelper.isIn(pair1.getKey(), pair1.getValue(), min_x,min_y,max_x,max_y)){
+						g.drawLine(pf.getX(pair.getKey()), pf.getY(pair.getValue()), pf.getX(pair1.getKey()), pf.getY(pair1.getValue()));
+					}
 				}
 			}
 			else {
-				g.drawLine(pf.getX(pair.getKey()), pf.getY(pair.getValue()), pf.getX(pair.getKey()), pf.getY(pair.getValue()));
+				if(MathHelper.isIn(pair.getKey(), pair.getValue(), min_x,min_y,max_x,max_y)) {
+					g.drawLine(pf.getX(pair.getKey()), pf.getY(pair.getValue()), pf.getX(pair.getKey()), pf.getY(pair.getValue()));
+				}
 			}
 		}
 	}
@@ -85,23 +90,38 @@ public class JPlot extends JPanel {
 			String axis = "x";
 			g.drawChars(axis.toCharArray(), 0, axis.length(), pf.getX(max_x), y0 - 10);
 			g.drawLine(pf.getX(min_x), y0, pf.getX(max_x), y0);
-			for(int i = 1;i <= (Math.abs(this.min_x) / this.scale_x);i++) {
-				double scaleX = -this.scale_x * i;
-				g.drawLine(pf.getX(scaleX), y0 - 5, pf.getX(scaleX), y0 + 5);
-				String s = String.valueOf(scaleX);
-				g.drawChars(s.toCharArray(), 0, s.length(), pf.getX(scaleX) - g.getFontMetrics().stringWidth(s) / 2, y0 + 15);
-				for(int j = 1;j < (Math.abs(this.scale_x) / this.scale_x_m);j++) {
-					g.drawLine(pf.getX(scaleX + this.scale_x_m * j), y0 - 2, pf.getX(scaleX + this.scale_x_m * j), y0 + 2);
+			
+			int min = this.min_x / this.scale_x > 0 ? MathHelper.roundUp(this.min_x / this.scale_x) : MathHelper.roundDown(this.min_x / this.scale_x);
+			int max = this.max_x / this.scale_x < 0 ? MathHelper.roundUp(this.max_x / this.scale_x) : MathHelper.roundDown(this.max_x / this.scale_x);
+			for(int i = min;i <= max;i++) {
+				double scaleX = this.scale_x * i;
+				if(i != 0) { 
+					g.drawLine(pf.getX(scaleX), y0 - 5, pf.getX(scaleX), y0 + 5);
+					String s = String.valueOf(scaleX);
+					g.drawChars(s.toCharArray(), 0, s.length(), pf.getX(scaleX) - g.getFontMetrics().stringWidth(s) / 2, y0 + 15);
+				}
+				
+				if((scaleX + scale_x) > this.max_x) continue;
+				int min_m = scaleX / this.scale_x_m > 0 ? MathHelper.roundUp(scaleX / this.scale_x_m) : MathHelper.roundDown(scaleX / this.scale_x_m);
+				int max_m = (scaleX + scale_x) / this.scale_x_m < 0 ? MathHelper.roundUp((scaleX + scale_x) / this.scale_x_m) : MathHelper.roundDown((scaleX + scale_x) / this.scale_x_m);
+				for(int j = min_m + 1;j < max_m;j++) {
+					double scaleX_m = this.scale_x_m * j;
+					g.drawLine(pf.getX(scaleX_m), y0 - 2, pf.getX(scaleX_m), y0 + 2);
 				}
 			}
-			for(int i = 1;i <= (Math.abs(this.max_x) / this.scale_x);i++) {
-				double scaleX = this.scale_x * i;
-				g.drawLine(pf.getX(scaleX), y0 - 5, pf.getX(scaleX), y0 + 5);
-				String s = String.valueOf(scaleX);
-				g.drawChars(s.toCharArray(), 0, s.length(), pf.getX(scaleX) - g.getFontMetrics().stringWidth(s) / 2, y0 + 15);
-				for(int j = 1;j < (Math.abs(this.scale_x) / this.scale_x_m);j++) {
-					g.drawLine(pf.getX(scaleX - this.scale_x_m * j), y0 - 2, pf.getX(scaleX - this.scale_x_m * j), y0 + 2);
-				}
+			
+			int min_m_min = this.min_x / this.scale_x_m > 0 ? MathHelper.roundUp(this.min_x / this.scale_x_m) : MathHelper.roundDown(this.min_x / this.scale_x_m);
+			int max_m_min = min * this.scale_x / this.scale_x_m < 0 ? MathHelper.roundUp(min * this.scale_x / this.scale_x_m) : MathHelper.roundDown(min * this.scale_x / this.scale_x_m);
+			for(int j = min_m_min;j < max_m_min;j++) {
+				double scaleX_m = this.scale_x_m * j;
+				g.drawLine(pf.getX(scaleX_m), y0 - 2, pf.getX(scaleX_m), y0 + 2);
+			}
+			
+			int min_m_max = max * this.scale_x / this.scale_x_m > 0 ? MathHelper.roundUp(max * this.scale_x / this.scale_x_m) : MathHelper.roundDown(max * this.scale_x / this.scale_x_m);
+			int max_m_max = this.max_x / this.scale_x_m < 0 ? MathHelper.roundUp(this.max_x / this.scale_x_m) : MathHelper.roundDown(this.max_x / this.scale_x_m);
+			for(int j = min_m_max + 1;j <= max_m_max;j++) {
+				double scaleX_m = this.scale_x_m * j;
+				g.drawLine(pf.getX(scaleX_m), y0 - 2, pf.getX(scaleX_m), y0 + 2);
 			}
 		}
 			
@@ -111,23 +131,40 @@ public class JPlot extends JPanel {
 			g.drawLine(x0, pf.getY(this.min_y), x0, pf.getY(this.max_y));
 			String axis = "y";
 			g.drawChars(axis.toCharArray(), 0, axis.length(), x0 + 10, pf.getY(max_y) - g.getFontMetrics().stringWidth(axis));
-			for(int i = 1;i <= (Math.abs(this.min_y) / this.scale_y);i++) {
-				double scaleY = -this.scale_y * i;
-				g.drawLine(x0 - 5, pf.getY(scaleY), x0 + 5, pf.getY(scaleY));
-				String s = String.valueOf(scaleY);
-				g.drawChars(s.toCharArray(), 0, s.length(), x0 - g.getFontMetrics().stringWidth(s) / 2 - 16, pf.getY(scaleY) + 5);
-				for(int j = 1;j < (Math.abs(this.scale_y) / this.scale_y_m);j++) {
-					g.drawLine(x0 - 2, pf.getX(scaleY + this.scale_y_m * j), x0 + 2, pf.getX(scaleY + this.scale_y_m * j));
+			
+			int min = this.min_y / this.scale_y > 0 ? MathHelper.roundUp(this.min_y / this.scale_y) : MathHelper.roundDown(this.min_y / this.scale_y);
+			int max = this.max_y / this.scale_y < 0 ? MathHelper.roundUp(this.max_y / this.scale_y) : MathHelper.roundDown(this.max_y / this.scale_y);
+			for(int i = min;i <= max;i++) {
+				double scaleY = this.scale_y * i;
+				if(i != 0) { 
+					g.drawLine(x0 - 5, pf.getY(scaleY), x0 + 5, pf.getY(scaleY));
+					String s = String.valueOf(scaleY);
+					g.drawChars(s.toCharArray(), 0, s.length(), x0 - g.getFontMetrics().stringWidth(s) / 2 - 16, pf.getY(scaleY) + 5);
+				}
+				
+				if((scaleY + scale_y) > this.max_y) continue;
+				int min_m = scaleY / this.scale_y_m > 0 ? MathHelper.roundUp(scaleY / this.scale_y_m) : MathHelper.roundDown(scaleY / this.scale_y_m);
+				int max_m = (scaleY + scale_y) / this.scale_y_m < 0 ? MathHelper.roundUp((scaleY + scale_y) / this.scale_y_m) : MathHelper.roundDown((scaleY + scale_y) / this.scale_y_m);
+				for(int j = min_m + 1;j < max_m;j++) {
+					double scaleY_m = this.scale_y_m * j;
+					g.drawLine(x0 - 2, pf.getY(scaleY_m), x0 + 2, pf.getY(scaleY_m));
 				}
 			}
-			for(int i = 1;i <= (Math.abs(this.max_y) / this.scale_y);i++) {
-				double scaleY = this.scale_y * i;
-				g.drawLine(x0 - 5, pf.getY(scaleY), x0 + 5, pf.getY(scaleY));
-				String s = String.valueOf(scaleY);
-				g.drawChars(s.toCharArray(), 0, s.length(), x0 - g.getFontMetrics().stringWidth(s) / 2 - 16, pf.getY(scaleY) + 5);
-				for(int j = 1;j < (Math.abs(this.scale_y) / this.scale_y_m);j++) {
-					g.drawLine(x0 - 2, pf.getX(scaleY - this.scale_y_m * j), x0 + 2, pf.getX(scaleY - this.scale_y_m * j));
-				}
+			
+			int min_m_min = this.min_y / this.scale_y_m > 0 ? MathHelper.roundUp(this.min_y / this.scale_y_m) : MathHelper.roundDown(this.min_y / this.scale_y_m);
+			int max_m_min = min * this.scale_y / this.scale_y_m < 0 ? MathHelper.roundUp(min * this.scale_y / this.scale_y_m) : MathHelper.roundDown(min * this.scale_y / this.scale_y_m);
+			
+			for(int j = min_m_min;j < max_m_min;j++) {
+				double scaleY_m = this.scale_y_m * j;
+				g.drawLine(x0 - 2, pf.getY(scaleY_m), x0 + 2, pf.getY(scaleY_m));
+			}
+			
+			int min_m_max = max * this.scale_y / this.scale_y_m > 0 ? MathHelper.roundUp(max * this.scale_y / this.scale_y_m) : MathHelper.roundDown(max * this.scale_y / this.scale_y_m);
+			int max_m_max = this.max_y / this.scale_y_m < 0 ? MathHelper.roundUp(this.max_y / this.scale_y_m) : MathHelper.roundDown(this.max_y / this.scale_y_m);
+			
+			for(int j = min_m_max + 1;j <= max_m_max;j++) {
+				double scaleY_m = this.scale_y_m * j;
+				g.drawLine(x0 - 2, pf.getY(scaleY_m), x0 + 2, pf.getY(scaleY_m));
 			}
 		}
 		
